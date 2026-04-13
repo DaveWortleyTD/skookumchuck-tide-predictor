@@ -1,0 +1,214 @@
+/* ── Reset & base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  color: #212529;
+  background: #f8f9fa;
+  line-height: 1.5;
+}
+
+#app { max-width: 960px; margin: 0 auto; padding: 1rem; }
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+header {
+  text-align: center;
+  padding: 1.5rem 0 1rem;
+  border-bottom: 1px solid #dee2e6;
+  margin-bottom: 1.5rem;
+}
+header h1 { font-size: 1.6rem; font-weight: 700; }
+.subtitle  { color: #6c757d; font-size: 0.9rem; margin-top: 0.25rem; }
+
+/* ── Nav row ──────────────────────────────────────────────────────────────── */
+.nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+input[type="month"] {
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.9rem;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+.btn-outline {
+  border-color: #6c757d;
+  background: transparent;
+  color: #6c757d;
+}
+.btn-outline:hover { background: #6c757d; color: #fff; }
+.btn-sm { padding: 0.2rem 0.6rem; font-size: 0.8rem; }
+
+/* ── Loading / Error ──────────────────────────────────────────────────────── */
+.loading, .no-sessions {
+  text-align: center;
+  color: #6c757d;
+  padding: 2rem 0;
+}
+.error-msg {
+  color: #842029;
+  background: #f8d7da;
+  border: 1px solid #f5c2c7;
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+/* ── Calendar ─────────────────────────────────────────────────────────────── */
+.tide-calendar { margin-bottom: 1.5rem; }
+
+.tide-calendar-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: #6c757d;
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.tide-calendar-body {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.tide-calendar-cell {
+  min-height: 64px;
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 0.25rem;
+  font-size: 0.75rem;
+}
+.tide-calendar-cell.adjacent  { background: #f8f9fa; opacity: 0.6; }
+.tide-calendar-cell.today      { border-color: #0d6efd; }
+.tide-calendar-cell.no-surf    { background: #f8f9fa; }
+
+.cell-date {
+  font-weight: 600;
+  font-size: 0.8rem;
+  margin-bottom: 0.2rem;
+  color: #495057;
+}
+.today .cell-date { color: #0d6efd; }
+
+/* ── Session badges ───────────────────────────────────────────────────────── */
+.tide-session-badge {
+  display: block;
+  border-radius: 3px;
+  padding: 1px 3px;
+  margin-bottom: 2px;
+  font-size: 0.7rem;
+  line-height: 1.3;
+  cursor: default;
+  color: #fff;
+}
+
+/* ── Wave quality colours ─────────────────────────────────────────────────── */
+.tide-small      { background-color: #6c757d; }
+.tide-medium     { background-color: #0d6efd; }
+.tide-large      { background-color: #198754; }
+.tide-green-fast { background-color: #0dcaf0; color: #000; }
+
+/* ── Wave guide ───────────────────────────────────────────────────────────── */
+.wave-guide {
+  margin-bottom: 1.25rem;
+  font-size: 0.85rem;
+  line-height: 1.8;
+}
+.wave-guide strong { display: block; margin-bottom: 0.25rem; }
+.hint { font-weight: 400; color: #6c757d; font-size: 0.8rem; }
+
+.badge {
+  display: inline-block;
+  padding: 0.15em 0.5em;
+  border-radius: 3px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #fff;
+  transition: opacity 0.15s;
+  user-select: none;
+}
+.tide-green-fast.badge { color: #000; }
+.badge.off { opacity: 0.35; }
+
+.night-toggle-row { margin-top: 0.4rem; }
+.tide-night-btn { background: #343a40; }
+
+/* ── Night hiding ─────────────────────────────────────────────────────────── */
+.night-session { opacity: 0.5; }
+
+/* ── Detail table ─────────────────────────────────────────────────────────── */
+.table-scroll { overflow-x: auto; }
+
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.detail-table th,
+.detail-table td {
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid #dee2e6;
+  white-space: nowrap;
+}
+.detail-table thead th {
+  background: #f8f9fa;
+  font-weight: 600;
+  text-align: left;
+}
+.detail-table tbody tr:hover { background: #f8f9fa; }
+
+/* Advanced columns hidden by default */
+.detail-table .adv { display: none; }
+.detail-table.show-advanced .adv { display: table-cell; }
+
+.gap-row td {
+  background: #f8f9fa;
+  color: #6c757d;
+  font-style: italic;
+  font-size: 0.8rem;
+  padding: 0.2rem 0.6rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+.footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #dee2e6;
+  font-size: 0.78rem;
+  color: #6c757d;
+  text-align: center;
+  line-height: 1.8;
+}
+.footer a { color: #0d6efd; }
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .tide-calendar-cell { min-height: 52px; }
+  .tide-session-badge { font-size: 0.62rem; }
+  .detail-table th,
+  .detail-table td { padding: 0.3rem 0.4rem; font-size: 0.75rem; }
+  header h1 { font-size: 1.2rem; }
+}

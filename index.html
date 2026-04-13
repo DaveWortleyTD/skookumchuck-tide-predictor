@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skookumchuck Narrows — Tide Predictor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <h1>Skookumchuck Narrows</h1>
+    <p class="subtitle">Sechelt Rapids Tidal Flood Session Predictor</p>
+  </header>
+
+  <main>
+    <div class="nav-row">
+      <button id="prev-btn" class="btn btn-outline">&#8249; <span id="prev-label"></span></button>
+      <input type="month" id="month-picker">
+      <button id="next-btn" class="btn btn-outline"><span id="next-label"></span> &#8250;</button>
+    </div>
+
+    <div id="loading" class="loading" hidden>Loading tide data…</div>
+    <div id="error"   class="error-msg" hidden></div>
+
+    <div id="calendar" class="tide-calendar" hidden>
+      <div class="tide-calendar-header">
+        <div class="dow">Mon</div><div class="dow">Tue</div><div class="dow">Wed</div>
+        <div class="dow">Thu</div><div class="dow">Fri</div><div class="dow">Sat</div>
+        <div class="dow">Sun</div>
+      </div>
+      <div id="calendar-body" class="tide-calendar-body"></div>
+    </div>
+
+    <div class="wave-guide" id="wave-guide" hidden>
+      <strong>Wave guide <span class="hint">(click to filter)</span></strong>
+      <div>
+        <span class="badge tide-small tide-filter-btn" data-filter="tide-small" role="button">Small</span>
+        7–9 kn — ideal for sea kayakers and long boats, playboats will struggle to catch the wave.
+      </div>
+      <div>
+        <span class="badge tide-medium tide-filter-btn" data-filter="tide-medium" role="button">Medium</span>
+        9–12 kn — long boats &amp; playboats, the wave will start to get good but won't be bowling.
+      </div>
+      <div>
+        <span class="badge tide-large tide-filter-btn" data-filter="tide-large" role="button">Large</span>
+        12–15 kn — perfect for playboaters. At the upper end the wave may green out from time to time.
+      </div>
+      <div>
+        <span class="badge tide-green-fast tide-filter-btn" data-filter="tide-green-fast" role="button">Huge</span>
+        15+ kn — mostly a green wave, suitable for surf kayaks and brave sea kayakers. The tour will be scary!
+      </div>
+      <div class="night-toggle-row">
+        <span class="badge tide-night-btn" id="night-toggle" role="button">🌙 Night tides</span>
+        — click to show tides outside daylight hours
+      </div>
+    </div>
+
+    <div id="table-wrap" hidden>
+      <div class="table-scroll">
+        <table id="detail-table" class="detail-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Wave Window</th>
+              <th>Peak</th>
+              <th>Speed</th>
+              <th>Wave</th>
+              <th class="adv">Tide Range</th>
+              <th class="adv">Diff</th>
+              <th class="adv">Ebb Speed</th>
+              <th>Sunrise / Sunset</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+      <button id="adv-toggle" class="btn btn-sm btn-outline" style="margin-top:0.5rem">Advanced</button>
+    </div>
+
+    <p id="no-sessions" class="no-sessions" hidden>No surfable sessions this month (all flood peaks below 7 knots).</p>
+
+    <footer class="footer">
+      Tide heights from Egmont (DFO IWLS station 5dd3064ee0fdc4b9b4be670d) · Times in Pacific time · Sessions shown where peak flood ≥ 7 kn
+      <br>
+      <a href="https://bcwhitewater.ca" target="_blank">BCWhitewater.ca</a>
+    </footer>
+  </main>
+</div>
+
+<script type="module">
+import { computeSessions, isNightSession, WAVE_QUALITY } from './tide.js';
+
+// ── State ──────────────────────────────────────────────────────────────────
+const today = new Date();
+let currentYear  = today.getFullYear();
+let currentMonth = today.getMonth() + 1; // 1-based
+
+const hiddenQualities = new Set();
+let nightHidden = sessionStorage.getItem('tideNightHidden') !== 'false';
+
+// ── DOM refs ───────────────────────────────────────────────────────────────
+const monthPicker  = document.getElementById('month-picker');
+const prevBtn      = document.getElementById('prev-btn');
+const nextBtn      = document.getElementById('next-btn');
+const prevLabel    = document.getElementById('prev-label');
+const nextLabel    = document.getElementById('next-label');
+const loadingEl    = document.getElementById('loading');
+const errorEl      = document.getElementById('error');
+const calendarEl   = document.getElementById('calendar');
+const calendarBody = document.getElementById('calendar-body');
+const waveGuide    = document.getElementById('wave-guide');
+const tableWrap    = document.getElementById('table-wrap');
+const tableBody    = document.getElementById('table-body');
+const noSessions   = document.getElementById('no-sessions');
+const advToggle    = document.getElementById('adv-toggle');
+const nightToggle  = document.getElementById('night-toggle');
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+const MONTHS = ['January','February','March','April','May','June',
+                'July','August','September','October','November','December'];
+
+const ORDINALS = n => {
+  const s = ['th','st','nd','rd'], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+};
+
+function fmtTime(date) {
+  return date.toLocaleTimeString('en-US', {
+    timeZone: 'America/Vancouver',
+    hour: 'numeric', minute: '2-digit', hour12: true,
+  }).toLowerCase();
+}
+
+function fmtDate(dateStr) {
+  const [, m, d] = dateStr.split('-').map(Number);
+  const dow = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(dateStr + 'T12:00:00').getDay()];
+  return `${dow} ${MONTHS[m-1].slice(0,3)} ${ORDINALS(d)}`;
+}
+
+function monthLabel(year, month) {
+  return `${MONTHS[month - 1]} ${year}`;
+}
+
+function prevMonth(year, month) {
+  return month === 1 ? [year - 1, 12] : [year, month - 1];
+}
+function nextMonth(year, month) {
+  return month === 12 ? [year + 1, 1] : [year, month + 1];
+}
+
+function sessionTooltip(s) {
+  const depart = new Date(s.windowStart.getTime() - 45 * 60 * 1000);
+  const lines = [
+    `${s.quality.label} — ${s.peakKnots} kn`,
+    s.quality.description,
+    `Window: ${fmtTime(s.windowStart)} – ${fmtTime(s.windowEnd)}`,
+    `Peak: ${fmtTime(s.peakTime)}`,
+  ];
+  if (s.sunrise && s.sunset)
+    lines.push(`Sunrise/Sunset: ${fmtTime(s.sunrise)} / ${fmtTime(s.sunset)}`);
+  if (s.highTideM != null && s.lowTideM != null)
+    lines.push(`Tide: ${s.lowTideM.toFixed(2)}–${s.highTideM.toFixed(2)} m (${s.tideDiffM} m range)`);
+  lines.push(`Depart Egmont: ${fmtTime(depart)}`);
+  return lines.join('\n');
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────
+function renderCalendar(year, month, sessions) {
+  const sessionsByDate = {};
+  for (const s of sessions) {
+    (sessionsByDate[s.dateStr] = sessionsByDate[s.dateStr] || []).push(s);
+  }
+
+  const firstDay = new Date(year, month - 1, 1);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  // Week starts Monday; getDay() returns 0=Sun
+  const startDow = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+  const totalCells = startDow + daysInMonth;
+  const trailing = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+
+  const todayStr = today.toLocaleDateString('en-CA');
+
+  const cells = [];
+
+  // Leading days
+  for (let i = 0; i < startDow; i++) {
+    const d = new Date(year, month - 1, -(startDow - i - 1));
+    const ds = d.toLocaleDateString('en-CA');
+    cells.push(renderCell(ds, sessionsByDate[ds] || [], true));
+  }
+
+  // Current month
+  for (let day = 1; day <= daysInMonth; day++) {
+    const ds = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    cells.push(renderCell(ds, sessionsByDate[ds] || [], false, ds === todayStr));
+  }
+
+  // Trailing days
+  for (let i = 1; i <= trailing; i++) {
+    const d = new Date(year, month, i);
+    const ds = d.toLocaleDateString('en-CA');
+    cells.push(renderCell(ds, sessionsByDate[ds] || [], true));
+  }
+
+  calendarBody.innerHTML = cells.join('');
+}
+
+function renderCell(dateStr, sessions, adjacent, isToday = false) {
+  const day = parseInt(dateStr.split('-')[2], 10);
+  const classes = ['tide-calendar-cell',
+    adjacent ? 'adjacent' : '',
+    isToday  ? 'today'    : '',
+    (!adjacent && sessions.length === 0) ? 'no-surf' : '',
+  ].filter(Boolean).join(' ');
+
+  const badges = sessions.map(s => {
+    const night = isNightSession(s);
+    const hidden = hiddenQualities.has(s.quality.css) || (nightHidden && night);
+    return `<div class="tide-session-badge ${s.quality.css}${night ? ' night-session' : ''}"
+                 title="${sessionTooltip(s).replace(/"/g, '&quot;')}"
+                 style="${hidden ? 'display:none' : ''}">
+      ${fmtTime(s.peakTime)}${night ? ' 🌙' : ''}<br>${s.peakKnots} kn
+    </div>`;
+  }).join('');
+
+  return `<div class="${classes}"><div class="cell-date">${day}</div>${badges}</div>`;
+}
+
+function renderTable(sessions) {
+  if (sessions.length === 0) return;
+
+  const rows = [];
+  for (let i = 0; i < sessions.length; i++) {
+    const s   = sessions[i];
+    const prev = sessions[i - 1];
+    const night = isNightSession(s);
+    const hidden = hiddenQualities.has(s.quality.css) || (nightHidden && night);
+
+    // Gap row
+    if (prev) {
+      const prevDate = new Date(prev.dateStr + 'T12:00:00');
+      const curDate  = new Date(s.dateStr    + 'T12:00:00');
+      const gapDays  = Math.round((curDate - prevDate) / 86400000) - 1;
+      if (gapDays > 0) {
+        const gapStart = new Date(prevDate.getTime() + 86400000);
+        const gapEnd   = new Date(curDate.getTime()  - 86400000);
+        const label    = gapStart.toLocaleDateString('en-CA') === gapEnd.toLocaleDateString('en-CA')
+          ? fmtDate(gapStart.toLocaleDateString('en-CA'))
+          : `${fmtDate(gapStart.toLocaleDateString('en-CA'))} – ${fmtDate(gapEnd.toLocaleDateString('en-CA'))}`;
+        rows.push(`<tr class="gap-row"><td colspan="9"><span class="text-muted">${label} — No tides</span></td></tr>`);
+      }
+    }
+
+    rows.push(`<tr data-quality="${s.quality.css}" data-night="${night ? 'true' : ''}" style="${hidden ? 'display:none' : ''}">
+      <td>${fmtDate(s.dateStr)}</td>
+      <td>${fmtTime(s.windowStart)} – ${fmtTime(s.windowEnd)}</td>
+      <td>${fmtTime(s.peakTime)}</td>
+      <td>${s.peakKnots} kn</td>
+      <td><span class="badge ${s.quality.css}">${s.quality.label}</span></td>
+      <td class="adv">${s.lowTideM != null ? `${s.lowTideM.toFixed(2)}–${s.highTideM.toFixed(2)} m` : '—'}</td>
+      <td class="adv">${s.tideDiffM != null ? `${s.tideDiffM} m` : '—'}</td>
+      <td class="adv">${s.ebbKnots != null ? `${s.ebbKnots} kn` : '—'}</td>
+      <td>${s.sunrise && s.sunset ? `${fmtTime(s.sunrise)} / ${fmtTime(s.sunset)}` : '—'}</td>
+    </tr>`);
+  }
+
+  tableBody.innerHTML = rows.join('');
+}
+
+function applyFilters() {
+  document.querySelectorAll('.tide-session-badge').forEach(el => {
+    const night = el.classList.contains('night-session');
+    el.style.display = (hiddenQualities.has([...el.classList].find(c => c.startsWith('tide-'))) ||
+                        (nightHidden && night)) ? 'none' : '';
+  });
+  document.querySelectorAll('#table-body tr[data-quality]').forEach(row => {
+    const night = row.dataset.night === 'true';
+    row.style.display = (hiddenQualities.has(row.dataset.quality) ||
+                         (nightHidden && night)) ? 'none' : '';
+  });
+}
+
+function syncNightToggle() {
+  nightToggle.classList.toggle('off', nightHidden);
+}
+
+// ── Main load ──────────────────────────────────────────────────────────────
+async function load(year, month) {
+  // Update nav
+  const [py, pm] = prevMonth(year, month);
+  const [ny, nm] = nextMonth(year, month);
+  prevLabel.textContent = monthLabel(py, pm);
+  nextLabel.textContent = monthLabel(ny, nm);
+  monthPicker.value = `${year}-${String(month).padStart(2, '0')}`;
+
+  // Show loading
+  loadingEl.hidden = false;
+  errorEl.hidden   = true;
+  calendarEl.hidden = true;
+  waveGuide.hidden  = true;
+  tableWrap.hidden  = true;
+  noSessions.hidden = true;
+
+  try {
+    const sessions = await computeSessions(year, month);
+
+    renderCalendar(year, month, sessions);
+    renderTable(sessions);
+
+    calendarEl.hidden = false;
+    waveGuide.hidden  = false;
+
+    if (sessions.length > 0) {
+      tableWrap.hidden = false;
+    } else {
+      noSessions.hidden = false;
+    }
+  } catch (err) {
+    errorEl.textContent = `Failed to load tide data: ${err.message}`;
+    errorEl.hidden = false;
+  } finally {
+    loadingEl.hidden = true;
+  }
+}
+
+// ── Event listeners ────────────────────────────────────────────────────────
+prevBtn.addEventListener('click', () => {
+  [currentYear, currentMonth] = prevMonth(currentYear, currentMonth);
+  load(currentYear, currentMonth);
+});
+nextBtn.addEventListener('click', () => {
+  [currentYear, currentMonth] = nextMonth(currentYear, currentMonth);
+  load(currentYear, currentMonth);
+});
+monthPicker.addEventListener('change', () => {
+  const [y, m] = monthPicker.value.split('-').map(Number);
+  currentYear = y; currentMonth = m;
+  load(currentYear, currentMonth);
+});
+
+// Quality filters
+document.querySelectorAll('.tide-filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const f = btn.dataset.filter;
+    if (hiddenQualities.has(f)) { hiddenQualities.delete(f); btn.classList.remove('off'); }
+    else                        { hiddenQualities.add(f);    btn.classList.add('off'); }
+    applyFilters();
+  });
+});
+
+// Night toggle
+nightToggle.addEventListener('click', () => {
+  nightHidden = !nightHidden;
+  sessionStorage.setItem('tideNightHidden', String(nightHidden));
+  syncNightToggle();
+  applyFilters();
+});
+
+// Advanced toggle
+advToggle.addEventListener('click', () => {
+  const table = document.getElementById('detail-table');
+  const on = table.classList.toggle('show-advanced');
+  advToggle.textContent = on ? 'Hide Advanced' : 'Advanced';
+});
+
+// ── Init ───────────────────────────────────────────────────────────────────
+syncNightToggle();
+load(currentYear, currentMonth);
+</script>
+</body>
+</html>
