@@ -9,6 +9,12 @@
 <body>
 
 <div id="app">
+  <nav class="site-nav">
+    <a href="https://bcwhitewater.org" class="brand">BCWhitewater</a>
+    <a href="https://bcwhitewater.org" class="btn btn-outline btn-sm">Back to site</a>
+  </nav>
+
+  <div class="page-content">
   <header>
     <h1>Skookumchuck Narrows</h1>
     <p class="subtitle">Sechelt Rapids Tidal Flood Session Predictor</p>
@@ -84,7 +90,7 @@
     <footer class="footer">
       Tide heights from Egmont (DFO IWLS station 5dd3064ee0fdc4b9b4be670d) · Times in Pacific time · Sessions shown where peak flood ≥ 7 kn
       <br>
-      <a href="https://bcwhitewater.ca" target="_blank">BCWhitewater.ca</a>
+      <a href="https://bcwhitewater.org" target="_blank">BCWhitewater.org</a>
     </footer>
   </main>
 </div>
@@ -369,5 +375,6 @@ advToggle.addEventListener('click', () => {
 syncNightToggle();
 load(currentYear, currentMonth);
 </script>
+  </div><!-- .page-content -->
 </body>
 </html>
