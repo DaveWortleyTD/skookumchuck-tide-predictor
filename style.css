@@ -10,6 +10,7 @@ body {
   color: #161C2D;
   background-color: #fff;
   line-height: 1.5;
+  overflow-x: hidden; /* prevents horizontal scrollbar inflating width */
 }
 
 #app { max-width: 980px; margin: 0 auto; }
