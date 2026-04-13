@@ -11,8 +11,8 @@
 <div id="app">
   <div class="page-content">
   <header>
-    <h1>Skookumchuck Narrows</h1>
-    <p class="subtitle">Sechelt Rapids Tidal Flood Session Predictor</p>
+    <h1>Skookumchuck Tide Forecast - Beta</h1>
+    <p class="subtitle">Disclaimer: Use at your own risk, please report any feedback.</p>
   </header>
 
   <main>
@@ -50,7 +50,7 @@
       </div>
       <div>
         <span class="badge tide-green-fast tide-filter-btn" data-filter="tide-green-fast" role="button">Huge</span>
-        15+ kn — mostly a green wave, suitable for surf kayaks and brave sea kayakers. The tour will be scary!
+        15+ kn — between 15 and 16 it becomes mostly a green wave, playboats can ride when it's building, but once green it's mainly suitable for surf kayaks and brave sea kayakers. The tour will be scary!
       </div>
       <div class="night-toggle-row">
         <span class="badge tide-night-btn" id="night-toggle" role="button">🌙 Night tides</span>
@@ -83,7 +83,7 @@
     <p id="no-sessions" class="no-sessions" hidden>No surfable sessions this month (all flood peaks below 7 knots).</p>
 
     <footer class="footer">
-      Tide heights from Egmont (DFO IWLS station 5dd3064ee0fdc4b9b4be670d) · Times in Pacific time · Sessions shown where peak flood ≥ 7 kn
+      Tide data from Egmont (DFO IWLS station 5dd3064ee0fdc4b9b4be670d) · Times in BC time (UTC−7, permanent since 2026) · Sessions shown where peak flood ≥ 7 kn · 59-min offset applied from Egmont high tide to Skookumchuck peak
       <br>
       <a href="https://tides.gc.ca/en/stations/07842" target="_blank">View official DFO tide data for Egmont →</a>
     </footer>
@@ -128,8 +128,9 @@ const ORDINALS = n => {
 };
 
 function fmtTime(date) {
+  // BC is permanently UTC-7 as of 2026 (no DST)
   return date.toLocaleTimeString('en-US', {
-    timeZone: 'America/Vancouver',
+    timeZone: 'Etc/GMT+7',
     hour: 'numeric', minute: '2-digit', hour12: true,
   }).toLowerCase();
 }
@@ -181,7 +182,7 @@ function renderCalendar(year, month, sessions) {
   const totalCells = startDow + daysInMonth;
   const trailing = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
 
-  const todayStr = today.toLocaleDateString('en-CA');
+  const todayStr = today.toLocaleDateString('en-CA', { timeZone: 'Etc/GMT+7' });
 
   const cells = [];
 

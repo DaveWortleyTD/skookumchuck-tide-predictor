@@ -1,12 +1,14 @@
 // Skookumchuck Narrows (Sechelt Rapids) Tide Predictor
 // Fetches hi/lo tide predictions from the DFO IWLS API for Egmont (station 5dd3064ee0fdc4b9b4be670d)
-// and derives surfable flood sessions using a 75-minute lag and 3.6 kn/m range formula.
+// and derives surfable flood sessions using a 59-minute lag and 3.6 kn/m range formula.
+// The 59-minute lag shifts Egmont high-tide time to the Skookumchuck peak flood current,
+// calibrated against the Skookumchuck Tourism Board schedule. Adjust if observations differ.
 
 const EGMONT_STATION_ID  = '5dd3064ee0fdc4b9b4be670d';
 const TIDE_LOCATION_LAT  = 50.4833;
 const TIDE_LOCATION_LNG  = -123.9;
 
-const FLOOD_LAG_MINUTES  = 15;
+const FLOOD_LAG_MINUTES  = 59;
 const KNOTS_PER_METRE    = 3.6;
 const MIN_SURFABLE_KNOTS = 7.0;
 const WINDOW_BEFORE_PEAK = 2.5 * 60 * 60 * 1000; // ms
@@ -58,9 +60,9 @@ async function fetchHeightEvents(year, month) {
   return events;
 }
 
-// Convert a UTC Date to Pacific local date string "YYYY-MM-DD"
+// Convert a UTC Date to BC local date string "YYYY-MM-DD" (permanent UTC-7, no DST since 2026)
 function toPacificDateStr(date) {
-  return date.toLocaleDateString('en-CA', { timeZone: 'America/Vancouver' });
+  return date.toLocaleDateString('en-CA', { timeZone: 'Etc/GMT+7' });
 }
 
 // Compute surfable sessions for the given year/month
@@ -197,18 +199,10 @@ function julianDay(y, m, d) {
   return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + d + B - 1524.5;
 }
 
-// Get Pacific UTC offset in minutes (positive = west, negative = east) for a given UTC date
-function getPacificOffsetMinutes(utcDate) {
-  // Format in Pacific, extract offset
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/Vancouver',
-    timeZoneName: 'shortOffset',
-  }).formatToParts(utcDate);
-  const tz = parts.find(p => p.type === 'timeZoneName')?.value || 'GMT-8';
-  const match = tz.match(/GMT([+-])(\d+)/);
-  if (!match) return -480; // default PST
-  const sign  = match[1] === '+' ? 1 : -1;
-  return -(sign * parseInt(match[2], 10) * 60);
+// BC is permanently UTC-7 as of 2026 (no Daylight Saving Time).
+// Returns 420 minutes (the number of minutes UTC midnight is ahead of BC midnight).
+function getPacificOffsetMinutes(_utcDate) {
+  return 420;
 }
 
 function isNightSession(s) {
