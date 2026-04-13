@@ -376,5 +376,15 @@ syncNightToggle();
 load(currentYear, currentMonth);
 </script>
   </div><!-- .page-content -->
+<script>
+  // Post document height to parent so bcwhitewater can auto-resize the iframe
+  function postHeight() {
+    const height = document.documentElement.scrollHeight;
+    window.parent.postMessage({ type: 'tideIframeHeight', height: height }, 'https://bcwhitewater.org');
+  }
+  // Send on load and whenever content changes (e.g. after month navigation)
+  window.addEventListener('load', postHeight);
+  new MutationObserver(postHeight).observe(document.body, { subtree: true, childList: true, attributes: true });
+</script>
 </body>
 </html>
