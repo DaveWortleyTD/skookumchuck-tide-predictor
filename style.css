@@ -120,14 +120,15 @@ input[type="month"] {
   font-size: 0.7rem;
   line-height: 1.3;
   cursor: default;
-  color: #fff;
+  color: #fff; /* overridden per quality class below */
 }
+.tide-session-badge.tide-small { color: #212529; }
 
-/* ── Wave quality colours ─────────────────────────────────────────────────── */
-.tide-small      { background-color: #6c757d; }
-.tide-medium     { background-color: #0d6efd; }
-.tide-large      { background-color: #198754; }
-.tide-green-fast { background-color: #0dcaf0; color: #000; }
+/* ── Wave quality colours (matches bcwhitewater) ──────────────────────────── */
+.tide-small      { background-color: #ffc107; color: #212529; }
+.tide-medium     { background-color: #fd7e14; color: #fff; }
+.tide-large      { background-color: #28a745; color: #fff; }
+.tide-green-fast { background-color: #007bff; color: #fff; }
 
 /* ── Wave guide ───────────────────────────────────────────────────────────── */
 .wave-guide {
@@ -149,7 +150,7 @@ input[type="month"] {
   transition: opacity 0.15s;
   user-select: none;
 }
-.tide-green-fast.badge { color: #000; }
+.tide-small.badge { color: #212529; }
 .badge.off { opacity: 0.35; }
 
 .night-toggle-row { margin-top: 0.4rem; }
