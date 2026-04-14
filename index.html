@@ -67,7 +67,6 @@
               <th>Wave Window</th>
               <th>Peak</th>
               <th>Speed</th>
-              <th>Wave</th>
               <th class="adv">Tide Range</th>
               <th class="adv">Diff</th>
               <th class="adv">Ebb Speed</th>
@@ -81,6 +80,14 @@
     </div>
 
     <p id="no-sessions" class="no-sessions" hidden>No surfable sessions this month (all flood peaks below 7 knots).</p>
+
+    <div id="session-popup" class="session-popup" hidden>
+      <div class="session-popup-backdrop"></div>
+      <div class="session-popup-card">
+        <button class="session-popup-close" aria-label="Close">&#x2715;</button>
+        <div id="session-popup-content"></div>
+      </div>
+    </div>
 
     <footer class="footer">
       Tide data from Egmont (DFO IWLS station 5dd3064ee0fdc4b9b4be670d) · Times in BC time (UTC−7, permanent since 2026) · Sessions shown where peak flood ≥ 7 kn · 59-min offset applied from Egmont high tide to Skookumchuck peak
@@ -251,7 +258,7 @@ function renderTable(sessions) {
         const label    = gapStart.toLocaleDateString('en-CA') === gapEnd.toLocaleDateString('en-CA')
           ? fmtDate(gapStart.toLocaleDateString('en-CA'))
           : `${fmtDate(gapStart.toLocaleDateString('en-CA'))} – ${fmtDate(gapEnd.toLocaleDateString('en-CA'))}`;
-        rows.push(`<tr class="gap-row"><td colspan="9"><span class="text-muted">${label} — No tides</span></td></tr>`);
+        rows.push(`<tr class="gap-row"><td colspan="8"><span class="text-muted">${label} — No tides</span></td></tr>`);
       }
     }
 
@@ -259,8 +266,7 @@ function renderTable(sessions) {
       <td>${fmtDate(s.dateStr)}</td>
       <td>${fmtTime(s.windowStart)} – ${fmtTime(s.windowEnd)}</td>
       <td>${fmtTime(s.peakTime)}</td>
-      <td>${s.peakKnots} kn</td>
-      <td><span class="badge ${s.quality.css}">${s.quality.label}</span></td>
+      <td><span class="badge ${s.quality.css}">${s.peakKnots} kn</span></td>
       <td class="adv">${s.lowTideM != null ? `${s.lowTideM.toFixed(2)}–${s.highTideM.toFixed(2)} m` : '—'}</td>
       <td class="adv">${s.tideDiffM != null ? `${s.tideDiffM} m` : '—'}</td>
       <td class="adv">${s.ebbKnots != null ? `${s.ebbKnots} kn` : '—'}</td>
@@ -365,6 +371,38 @@ advToggle.addEventListener('click', () => {
   const table = document.getElementById('detail-table');
   const on = table.classList.toggle('show-advanced');
   advToggle.textContent = on ? 'Hide Advanced' : 'Advanced';
+});
+
+// ── Session popup (tap on mobile) ─────────────────────────────────────────
+const sessionPopup        = document.getElementById('session-popup');
+const sessionPopupContent = document.getElementById('session-popup-content');
+const sessionPopupBackdrop = sessionPopup.querySelector('.session-popup-backdrop');
+const sessionPopupClose   = sessionPopup.querySelector('.session-popup-close');
+
+function openSessionPopup(badge) {
+  const lines = badge.title.split('\n').filter(Boolean);
+  // Pull quality class from the badge to colour the header
+  const qualityClass = [...badge.classList].find(c => c.startsWith('tide-')) || '';
+  sessionPopupContent.innerHTML =
+    `<div class="popup-header ${qualityClass}">${lines[0] || ''}</div>` +
+    lines.slice(1).map(l => `<div class="popup-line">${l}</div>`).join('');
+  sessionPopup.hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSessionPopup() {
+  sessionPopup.hidden = true;
+  document.body.style.overflow = '';
+}
+
+sessionPopupBackdrop.addEventListener('click', closeSessionPopup);
+sessionPopupClose.addEventListener('click', closeSessionPopup);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSessionPopup(); });
+
+// Delegate to all badges rendered inside calendarBody or tableBody
+document.getElementById('app').addEventListener('click', e => {
+  const badge = e.target.closest('.tide-session-badge');
+  if (badge && badge.title) openSessionPopup(badge);
 });
 
 // ── Init ───────────────────────────────────────────────────────────────────

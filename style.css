@@ -233,6 +233,71 @@ input[type="month"] {
   border-bottom: 1px solid #dee2e6;
 }
 
+/* ── Session popup ────────────────────────────────────────────────────────── */
+.session-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.session-popup[hidden] { display: none; }
+
+.session-popup-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.session-popup-card {
+  position: relative;
+  background: #fff;
+  border-radius: 12px 12px 0 0;
+  padding: 1.25rem 1.25rem 2rem;
+  width: 100%;
+  max-width: 480px;
+  z-index: 1;
+  box-shadow: 0 -2px 16px rgba(0,0,0,0.15);
+}
+
+.session-popup-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #506690;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+.session-popup-close:hover { background: #F9FBFD; }
+
+.popup-header {
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 5px;
+  color: #fff;
+}
+.popup-header.tide-small { background: #ffc107; color: #212529; }
+.popup-header.tide-medium { background: #fd7e14; }
+.popup-header.tide-large { background: #28a745; }
+.popup-header.tide-green-fast { background: #007bff; }
+
+.popup-line {
+  font-size: 0.9rem;
+  color: #161C2D;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid #f0f0f0;
+  line-height: 1.6;
+}
+.popup-line:last-child { border-bottom: none; }
+
 /* ── Footer ───────────────────────────────────────────────────────────────── */
 .footer {
   margin-top: 2rem;
