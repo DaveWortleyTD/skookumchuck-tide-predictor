@@ -262,10 +262,10 @@ function renderTable(sessions) {
       }
     }
 
-    rows.push(`<tr data-quality="${s.quality.css}" data-night="${night ? 'true' : ''}" style="${hidden ? 'display:none' : ''}">
+    rows.push(`<tr data-quality="${s.quality.css}" data-night="${night ? 'true' : ''}" class="${night ? 'night-session' : ''}" style="${hidden ? 'display:none' : ''}">
       <td>${fmtDate(s.dateStr)}</td>
       <td>${fmtTime(s.windowStart)} – ${fmtTime(s.windowEnd)}</td>
-      <td>${fmtTime(s.peakTime)}</td>
+      <td>${fmtTime(s.peakTime)}${night ? ' 🌙' : ''}</td>
       <td><span class="badge ${s.quality.css}">${s.peakKnots} kn</span></td>
       <td class="adv">${s.lowTideM != null ? `${s.lowTideM.toFixed(2)}–${s.highTideM.toFixed(2)} m` : '—'}</td>
       <td class="adv">${s.tideDiffM != null ? `${s.tideDiffM} m` : '—'}</td>
